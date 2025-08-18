@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-# math 
+#  
 scilib = "1.0.0"
 num = "0.4.3"
 
@@ -16,4 +16,5 @@ log = "0.4"
 wgpu = "26.0"
 pollster = "0.4"
 bytemuck = { version = "1.16", features = [ "derive" ] }
- 
+cgmath = "0.18.0"
+instant = "0.1.13"

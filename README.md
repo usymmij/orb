@@ -1,6 +1,14 @@
 # Orb
 
-rendering the hydrogen orbitals based on electron states
+A visualizer of hydrogen's atomic orbitals in different states
 
-- currently compiled for native rendering
-    - once rust wasm org has been reorganized I want to recompile this for webGPU
+- Written with rust and wgpu
+
+
+## References
+
+| Reference                                                                                                                                                                                                         | Author                       |
+|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------|
+| [Learn Wgpu](https://sotrh.github.io/learn-wgpu/)                                                                                                                                                                 | Benjamin Hansen              |
+| [Quantum Mechanics with Python: Hydrogen Wavefunctions and Electron Density Plots](https://ssebastianmag.medium.com/computational-physics-with-python-hydrogen-wavefunctions-electron-density-plots-8fede44b7b12) | Sebastian Mag                |
+| [Ray Tracing in One Weekend](https://github.com/RayTracing/raytracing.github.io?tab=readme-ov-file)                                                                                                               | Shirley, Black, and Hollasch |
