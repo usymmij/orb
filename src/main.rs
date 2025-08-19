@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use winit::{
     application::ApplicationHandler,
-    event::{ElementState, Event, KeyEvent, MouseButton, WindowEvent},
+    event::{DeviceEvent, ElementState, Event, KeyEvent, MouseButton, WindowEvent},
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
     keyboard::PhysicalKey,
     window::{Window, WindowId},
@@ -28,6 +28,22 @@ impl ApplicationHandler for App {
         self.state = Some(state);
 
         window.request_redraw();
+    }
+    fn device_event(
+        &mut self,
+        event_loop: &ActiveEventLoop,
+        device_id: winit::event::DeviceId,
+        event: winit::event::DeviceEvent,
+    ) {
+        let state = self.state.as_mut().unwrap();
+        match event {
+            DeviceEvent::MouseMotion { delta } => {
+                if self.mouse_pressed {
+                    state.handle_mouse(delta.0, delta.1);
+                }
+            }
+            _ => {}
+        }
     }
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
         let state = self.state.as_mut().unwrap();
@@ -60,7 +76,7 @@ impl ApplicationHandler for App {
                 button: MouseButton::Left,
                 state,
                 ..
-            } => self.mouse_pressed = (state == ElementState::Pressed),
+            } => self.mouse_pressed = state == ElementState::Pressed,
             _ => (),
         }
     }

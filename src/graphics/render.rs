@@ -6,30 +6,30 @@ use winit::{event_loop::ActiveEventLoop, keyboard::KeyCode, window::Window};
 
 const DEBUG: bool = true;
 
-const SCREEN_VERTICES: &[Vertex] = &[
+const VERTICES: &[Vertex] = &[
     Vertex {
-        position: [0.0, 1., 1.0],
+        position: [0.0, 0.5, 0.0],
+        color: [0.5, 0.5, 0.5],
+    },
+    Vertex {
+        position: [0., 0.0, -0.5],
         color: [0.5, 0.5, 1.0],
     },
     Vertex {
-        position: [0., 0.0, 0.0],
-        color: [1.0, 0.20, 1.0],
+        position: [0.5, 0.0, 0.0],
+        color: [0.0, 0.5, 1.0],
     },
     Vertex {
-        position: [1.0, 0.0, 1.0],
-        color: [0.10, 0.1, 1.0],
+        position: [0., 0.0, 0.5],
+        color: [0.5, 0.5, 1.0],
     },
     Vertex {
-        position: [0., 0.0, 2.0],
-        color: [1.0, 0.0, 1.0],
+        position: [-0.5, 0.0, 0.],
+        color: [0.5, 0.0, 1.0],
     },
     Vertex {
-        position: [-1.0, 0.0, 1.0],
-        color: [0.7, 0.7, 1.0],
-    },
-    Vertex {
-        position: [0., -1., 1.],
-        color: [1.0, 0.4, 0.8],
+        position: [0., -0.5, 0.],
+        color: [0.0, 0., 0.],
     },
 ];
 
@@ -66,7 +66,7 @@ impl State {
             .await
             .unwrap();
         let mut devdesc = wgpu::DeviceDescriptor::default();
-        devdesc.required_features = wgpu::Features::POLYGON_MODE_POINT;
+        //devdesc.required_features = wgpu::Features::POLYGON_MODE_POINT;
         let (device, queue) = adapter.request_device(&devdesc).await.unwrap();
 
         // size of the window
@@ -90,16 +90,7 @@ impl State {
 
         // camera
 
-        let camera = Camera {
-            eye: (0.0, 0.0, -1.).into(),
-            yaw: cgmath::Deg(90.0).into(),
-            pitch: cgmath::Deg(0.0).into(),
-            up: cgmath::Vector3::unit_y(),
-            aspect: config.width as f32 / config.height as f32,
-            fovy: cgmath::Deg(45.0).into(),
-            znear: 0.1,
-            zfar: 100.0,
-        };
+        let camera = Camera::new();
 
         if DEBUG == true {
             let mat = &camera.build_view_projection_matrix();
@@ -141,7 +132,7 @@ impl State {
             }],
             label: Some("camera_bind_group"),
         });
-        let camera_controller = CameraController::new(0.5);
+        let camera_controller = CameraController::new(0.2, 0.01);
         /*
         Shader pipeline here
         */
@@ -199,7 +190,7 @@ impl State {
         });
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
-            contents: bytemuck::cast_slice(SCREEN_VERTICES),
+            contents: bytemuck::cast_slice(VERTICES),
             usage: wgpu::BufferUsages::VERTEX,
         });
         let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -243,6 +234,9 @@ impl State {
             }
             _ => {}
         }
+    }
+    pub fn handle_mouse(&mut self, x: f64, y: f64) {
+        self.camera_controller.turn(x, y);
     }
 
     pub fn get_window(&self) -> &Window {
