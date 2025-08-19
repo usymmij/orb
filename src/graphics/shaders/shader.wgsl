@@ -36,5 +36,7 @@ fn vs_main(
 // Fragment shaders
     @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    return in.color;
+    let brightness = 0.8 * (length(in.coord_position) - 0.8090169943749475);
+    //return vec4(brightness + 0.6, 0.3, 0.9 - brightness, 1.);
+    return in.color * (1. - brightness);
 }

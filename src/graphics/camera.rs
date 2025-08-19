@@ -6,6 +6,7 @@ use winit::keyboard::KeyCode;
 
 const TARG_NEAR_DIST_LIMIT: f32 = 1.;
 const TARG_VERT_ANGLE_LIMIT: f32 = (PI / 2.) - 0.1;
+const RESET_Z: f32 = 1.5;
 
 pub struct Camera {
     pub eye: cgmath::Point3<f32>,
@@ -30,7 +31,7 @@ pub const OPENGL_TO_WGPU_MATRIX: cgmath::Matrix4<f32> = cgmath::Matrix4::from_co
 impl Camera {
     pub fn new() -> Camera {
         Camera {
-            eye: (0.0, 0.0, 1.).into(),
+            eye: (0.0, 0.0, RESET_Z).into(),
             target: (0.0, 0.0, 0.).into(),
             //yaw: cgmath::Deg(90.0).into(),
             //pitch: cgmath::Deg(0.0).into(),
@@ -156,7 +157,7 @@ impl CameraController {
     pub fn reset(&self, cam: &mut Camera) {
         cam.eye.x = 0.;
         cam.eye.y = 0.;
-        cam.eye.z = -1.;
+        cam.eye.z = RESET_Z;
         //cam.yaw = cgmath::Deg(90.0).into();
         //cam.pitch = cgmath::Deg(0.0).into();
     }

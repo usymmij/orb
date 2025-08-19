@@ -1,41 +1,11 @@
 use super::camera::{Camera, CameraController, CameraUniform};
+use super::icosahedron::*;
 use super::vertex::Vertex;
 use std::sync::Arc;
 use wgpu::util::DeviceExt;
 use winit::{event_loop::ActiveEventLoop, keyboard::KeyCode, window::Window};
 
 const DEBUG: bool = true;
-
-const VERTICES: &[Vertex] = &[
-    Vertex {
-        position: [0.0, 0.5, 0.0],
-        color: [0.5, 0.5, 0.5],
-    },
-    Vertex {
-        position: [0., 0.0, -0.5],
-        color: [0.5, 0.5, 1.0],
-    },
-    Vertex {
-        position: [0.5, 0.0, 0.0],
-        color: [0.0, 0.5, 1.0],
-    },
-    Vertex {
-        position: [0., 0.0, 0.5],
-        color: [0.5, 0.5, 1.0],
-    },
-    Vertex {
-        position: [-0.5, 0.0, 0.],
-        color: [0.5, 0.0, 1.0],
-    },
-    Vertex {
-        position: [0., -0.5, 0.],
-        color: [0.0, 0., 0.],
-    },
-];
-
-const INDICES: &[u16] = &[
-    0, 1, 2, 0, 2, 3, 0, 3, 4, 0, 4, 1, 5, 1, 4, 5, 4, 3, 5, 3, 2, 5, 2, 1,
-];
 
 pub struct State {
     window: Arc<Window>,
