@@ -1,12 +1,11 @@
 use std::f32::consts::PI;
 
 use cgmath::*;
-use instant::Duration;
 use winit::keyboard::KeyCode;
 
 const TARG_NEAR_DIST_LIMIT: f32 = 1.;
 const TARG_VERT_ANGLE_LIMIT: f32 = (PI / 2.) - 0.1;
-const RESET_Z: f32 = 1.5;
+const RESET_Z: f32 = 3.;
 
 pub struct Camera {
     pub eye: cgmath::Point3<f32>,

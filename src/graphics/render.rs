@@ -2,18 +2,22 @@ use super::camera::{Camera, CameraController, CameraUniform};
 use super::icosahedron::*;
 use super::vertex::Vertex;
 use std::sync::Arc;
+use wgpu;
 use wgpu::util::DeviceExt;
 use winit::{event_loop::ActiveEventLoop, keyboard::KeyCode, window::Window};
 
-const DEBUG: bool = true;
+#[allow(dead_code)]
+const DEBUG: bool = false;
 
 pub struct State {
-    window: Arc<Window>,
+    pub window: Arc<Window>,
     device: wgpu::Device,
     queue: wgpu::Queue,
     size: winit::dpi::PhysicalSize<u32>,
+    #[allow(dead_code)]
     config: wgpu::SurfaceConfiguration,
     surface: wgpu::Surface<'static>,
+    is_surface_configured: bool,
     surface_format: wgpu::TextureFormat,
     render_pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
@@ -27,50 +31,83 @@ pub struct State {
 }
 
 impl State {
-    pub async fn new(window: Arc<Window>) -> State {
+    pub async fn new(window: Arc<Window>) -> anyhow::Result<State> {
         // instance of wgpu
-        let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor::default());
+        let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
+            #[cfg(not(target_arch = "wasm32"))]
+            backends: wgpu::Backends::PRIMARY,
+            #[cfg(target_arch = "wasm32")]
+            backends: wgpu::Backends::BROWSER_WEBGPU,
+            ..Default::default()
+        });
+
+        //let adapter = instance
+        //    .request_adapter(&wgpu::RequestAdapterOptions {
+        //        power_preference: wgpu::PowerPreference::default(),
+        //        compatible_surface: Some(&surface),
+        //        force_fallback_adapter: false,
+        //    })
+        //    .await?;
+
         // adapter is the device handler
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .unwrap();
-        let mut devdesc = wgpu::DeviceDescriptor::default();
-        //devdesc.required_features = wgpu::Features::POLYGON_MODE_POINT;
-        let (device, queue) = adapter.request_device(&devdesc).await.unwrap();
+            .await?;
+        //.unwrap();
+
+        #[allow(unused_variables)]
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor {
+                label: None,
+                required_features: wgpu::Features::empty(),
+                // WebGL doesn't support all of wgpu's features, so if
+                // we're building for the web we'll have to disable some.
+                required_limits: if cfg!(target_arch = "wasm32") {
+                    wgpu::Limits::downlevel_webgl2_defaults()
+                } else {
+                    wgpu::Limits::default()
+                },
+                memory_hints: Default::default(),
+                trace: wgpu::Trace::Off,
+            })
+            .await?;
 
         // size of the window
         let size = window.inner_size();
 
-        // Working space in the window
         let surface = instance.create_surface(window.clone()).unwrap();
+
         // capabilities of this surface
-        let cap = surface.get_capabilities(&adapter);
-        let surface_format = cap.formats[0];
+        let surface_caps = surface.get_capabilities(&adapter);
+
+        #[allow(unused_assignments)]
+        #[allow(unused_mut)]
+        let mut cap_id = 0;
+
+        #[cfg(target_arch = "wasm32")]
+        {
+            cap_id = 2;
+        }
+
+        let surface_format = surface_caps
+            .formats
+            .iter()
+            .find(|f| f.is_srgb())
+            .copied()
+            .unwrap_or(surface_caps.formats[cap_id]);
+
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format: surface_format,
             width: size.width,
             height: size.height,
-            present_mode: cap.present_modes[0],
-            alpha_mode: cap.alpha_modes[0],
+            present_mode: surface_caps.present_modes[0],
+            alpha_mode: surface_caps.alpha_modes[0],
             view_formats: vec![],
             desired_maximum_frame_latency: 2,
         };
-
         // camera
-
         let camera = Camera::new();
-
-        if DEBUG == true {
-            let mat = &camera.build_view_projection_matrix();
-            for i in 0..4 {
-                for j in 0..4 {
-                    print!("{:03.1} ", mat[i][j]);
-                }
-                println!();
-            }
-        }
 
         let mut camera_uniform = CameraUniform::new();
         camera_uniform.update_view_proj(&camera);
@@ -177,6 +214,7 @@ impl State {
             size,
             config,
             surface,
+            is_surface_configured: false,
             surface_format,
             render_pipeline,
             vertex_buffer,
@@ -192,13 +230,18 @@ impl State {
         // Configure surface for the first time
         state.configure_surface();
 
-        state
+        Ok(state)
     }
 
+    #[allow(unused_variables)]
     pub fn handle_key(&mut self, event_loop: &ActiveEventLoop, code: KeyCode, is_pressed: bool) {
         self.camera_controller.process_events(code, is_pressed);
         match (code, is_pressed) {
-            (KeyCode::Escape, true) => event_loop.exit(),
+            (KeyCode::Escape, true) =>
+            {
+                #[cfg(not(target_arch = "wasm32"))]
+                event_loop.exit()
+            }
             (KeyCode::KeyR, true) => {
                 self.camera_controller.reset(&mut self.camera);
             }
@@ -234,7 +277,9 @@ impl State {
             .update_aspect(new_size.width as f32 / new_size.height as f32);
 
         // reconfigure the surface
+
         self.configure_surface();
+        self.is_surface_configured = true;
     }
 
     pub fn update(&mut self) {
@@ -247,8 +292,13 @@ impl State {
         );
     }
 
-    pub fn render(&mut self) {
+    pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         // fetch surface texture(synchronous)
+
+        self.window.request_redraw();
+        if !self.is_surface_configured {
+            return Ok(());
+        }
         let surface_texture = self
             .surface
             .get_current_texture()
@@ -267,7 +317,7 @@ impl State {
         let mut encoder = self.device.create_command_encoder(&Default::default());
         // Create the renderpass which will clear the screen.
         let mut renderpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: None,
+            label: Some("Renderpass Encoder"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                 view: &texture_view,
                 depth_slice: None,
@@ -295,5 +345,7 @@ impl State {
         self.queue.submit([encoder.finish()]);
         self.window.pre_present_notify();
         surface_texture.present();
+
+        Ok(())
     }
 }

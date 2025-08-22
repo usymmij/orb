@@ -4,6 +4,9 @@ A visualizer of hydrogen's atomic orbitals in different states
 
 - Written with rust and wgpu
 
+## note on hosting
+- note that WebGPU requires https to work, a debug server on http will cause browsers to throw rendering errors
+
 
 ## References
 
