@@ -165,9 +165,9 @@ mod cdf {
     }
 
     pub struct CDFTriple {
-        radial: CDF,
-        polar: CDF,
-        azimuthal: CDF,
+        pub radial: CDF,
+        pub polar: CDF,
+        pub azimuthal: CDF,
     }
 
     impl CDFTriple {
@@ -185,13 +185,13 @@ use cdf::*;
 use wavefunction::*;
 
 /* NOTE:
-    The generation method here takes a riemann sum over the PDF (square of the
+    The generation method here takes a reimann sum over the PDF (square of the
     wavefunction) to get a CDF, then uniformly samples its inverse.
     It should be doable to do closed form integration of the PDF instead with
     IBP, treating n,l,m as constants.
 */
 pub fn gen_cdf(n: i32, l: i32, m: i32, scale: f64, reso: i32) -> CDFTriple {
-    let a0 = scale * 5.29; // bohr radius = 5.29 * 10E-11
+    let a0 = scale * 5.29; // INFO: bohr radius = 5.29 * 10E-11
 
     // solve the general form of the wavefunction for this state first
     let wavefunction = wavefunction::Wavefunction::new(n, l, m, a0);
@@ -207,26 +207,35 @@ pub fn gen_cdf(n: i32, l: i32, m: i32, scale: f64, reso: i32) -> CDFTriple {
 
     let mut rcdf = cdf::CDF::new();
 
-    let mut total: f64 = 0.;
+    let mut rtotal: f64 = 0.;
 
     // NOTE: Radial sampling
 
     // check positive
     for i in linspace {
-        total += wavefunction.radial(i).powi(2);
-        rcdf.add_point(total, i);
+        rtotal += wavefunction.radial(i).powi(2);
+        rcdf.add_point(rtotal, i);
     }
 
+    return CDFTriple::new(rcdf.clone(), rcdf.clone(), rcdf);
+}
+
+fn sample_cdf(cdfs: CDFTriple) -> f64 {
+    let radial_cdf = cdfs.radial;
+    let polar_cdf = cdfs.polar;
+    let azimuthal_cdf = cdfs.azimuthal;
+
     // TODO: generate spaced random numbers
+
     // TODO: sample inverse transform
-    rcdf.inverse_transform(0.);
+    radial_cdf.inverse_transform(0.);
 
     // TODO: angular sampling
     // TODO: randomize octant
     // PERF: check if randomizing octant is better before or after
 
     // TODO: add in angular CDFs
-    return CDFTriple::new(rcdf.clone(), rcdf.clone(), rcdf);
+    return 1.;
 }
 
 #[cfg(test)]
