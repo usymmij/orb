@@ -1,2 +1,2 @@
 pub mod graphics;
-pub mod wavefunction;
+pub mod particle_gen;

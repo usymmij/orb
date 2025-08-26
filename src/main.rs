@@ -1,4 +1,5 @@
 use orblib::graphics::render::State;
+use orblib::*;
 use std::sync::Arc;
 use winit::{
     application::ApplicationHandler,
@@ -13,9 +14,10 @@ use wasm_bindgen::prelude::*;
 
 #[derive(Default)]
 struct App {
+    state: Option<State>,
     #[cfg(target_arch = "wasm32")]
     proxy: Option<winit::event_loop::EventLoopProxy<State>>,
-    state: Option<State>,
+
     mouse_pressed: bool,
 }
 
